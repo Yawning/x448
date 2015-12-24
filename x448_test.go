@@ -27,8 +27,14 @@ package x448
 import (
 	"bytes"
 	"crypto/rand"
+	"encoding/hex"
 	"testing"
 )
+
+// Cowardly refuse to run the full slow test vector case unless this is set
+// at compile time, because the timeout for the test harness needs to be
+// adjusted at runtime.
+var reallyRunSlowTest = true
 
 func TestX448(t *testing.T) {
 	type KATVectors struct {
@@ -107,6 +113,49 @@ func TestX448(t *testing.T) {
 		if !bytes.Equal(out[:], vec.answer[:]) {
 			t.Errorf("KAT[%d]: Mismatch", i)
 		}
+	}
+}
+
+func TestX448IETFDraft(t *testing.T) {
+	// Run the other test vectors from 5.2 of the IETF draft.
+
+	// WARNING: The full version of the test will easily take longer than the
+	// default 10 min test timeout, even on a moderately powerful box.
+	//
+	// Unless reallyRunSlowTest is set in the source code, it will cowardly
+	// refuse to run the full 1 million iterations, and the `go test`
+	// timeout will need to be increased (`go test -timeout 30m`).
+
+	var k, u, out [x448Bytes] byte
+	copy(k[:], basePoint[:])
+	copy(u[:], basePoint[:])
+
+	for i := 0; i < 1000000; i++ {
+		ret := ScalarMult(&out, &k, &u)
+		if ret != 0 {
+			t.Fatalf("Iterated[%d]: ScalarMultiply failed", i)
+		}
+		switch (i+1) {
+		case 1:
+			known, _ := hex.DecodeString("3f482c8a9f19b01e6c46ee9711d9dc14fd4bf67af30765c2ae2b846a4d23a8cd0db897086239492caf350b51f833868b9bc2b3bca9cf4113")
+			if !bytes.Equal(out[:], known) {
+				t.Fatalf("Iterated[%d]: Mismatch", i)
+			}
+		case 1000:
+			known, _ := hex.DecodeString("aa3b4749d55b9daf1e5b00288826c467274ce3ebbdd5c17b975e09d4af6c67cf10d087202db88286e2b79fceea3ec353ef54faa26e219f38")
+			if !bytes.Equal(out[:], known) {
+				t.Fatalf("Iterated[%d]: Mismatch", i)
+			}
+			if testing.Short() || !reallyRunSlowTest {
+				t.Skipf("Short test requested, skipping remaining, was correct at 1k")
+			}
+		}
+		copy(u[:], k[:])
+		copy(k[:], out[:])
+	}
+	known, _ := hex.DecodeString("077f453681caca3693198420bbe515cae0002472519b3e67661a7e89cab94695c8f4bcd66e61b9b9c946da8d524de3d69bd9d9d66b997e37")
+	if !bytes.Equal(k[:], known) {
+		t.Fatal("Final value mismatch")
 	}
 }
 
