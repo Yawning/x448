@@ -28,10 +28,6 @@ package x448
 // have __(u)int128_t, so the 32 bit code it is, at a hefty performance
 // penalty.  Fuck my life, I'm going to have to bust out PeachPy to get this
 // to go fast aren't I.
-//
-// This is equivalent to the non-unrolled reference code, though the compiler
-// is free to unroll as it sees fit.  If performance is horrendous I'll
-// manually unroll things.
 
 const (
 	wBits     = 32
