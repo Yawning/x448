@@ -34,7 +34,7 @@ import (
 // Cowardly refuse to run the full slow test vector case unless this is set
 // at compile time, because the timeout for the test harness needs to be
 // adjusted at runtime.
-var reallyRunSlowTest = true
+var reallyRunSlowTest = false
 
 func TestX448(t *testing.T) {
 	type KATVectors struct {
