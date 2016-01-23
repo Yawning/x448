@@ -3,7 +3,7 @@
 
 A straight forward port of Michael Hamburg's x448 code to Go lang.
 
-See: https://tools.ietf.org/html/draft-irtf-cfrg-curves-11
+See: https://www.rfc-editor.org/rfc/rfc7748.txt
 
 If you're familiar with how to use golang.org/x/crypto/curve25519, you will be
 right at home with using x448, since the functions are the same.  Generate a
