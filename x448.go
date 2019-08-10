@@ -1,7 +1,7 @@
 // The MIT License (MIT)
 //
 // Copyright (c) 2014-2015 Cryptography Research, Inc.
-// Copyright (c) 2015 Yawning Angel.
+// Copyright (c) 2015-2019 Yawning Angel.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,8 +24,8 @@
 // Package x448 provides an implementation of scalar multiplication on the
 // elliptic curve known as curve448.
 //
-// See https://tools.ietf.org/html/draft-irtf-cfrg-curves-11
-package x448 // import "git.schwanenlied.me/yawning/x448.git"
+// See https://www.rfc-editor.org/rfc/rfc7748.txt
+package x448
 
 const (
 	x448Bytes = 56
@@ -39,7 +39,7 @@ var basePoint = [56]byte{
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 }
 
-func ScalarMult(out, scalar, base *[56]byte) int {
+func ScalarMult(out, scalar, base *[56]byte) {
 	var x1, x2, z2, x3, z3, t1, t2 gf
 	x1.deser(base)
 	x2.cpy(&one)
@@ -95,20 +95,8 @@ func ScalarMult(out, scalar, base *[56]byte) int {
 	z2.inv(&z2)
 	x1.mul(&x2, &z2)
 	x1.ser(out)
-
-	// As with X25519, both sides MUST check, without leaking extra
-	// information about the value of K, whether the resulting shared K is
-	// the all-zero value and abort if so.
-	var nz limbSint
-	for _, v := range out {
-		nz |= (limbSint)(v)
-	}
-	nz = (nz - 1) >> 8 // 0 = succ, -1 = fail
-
-	// return value: 0 = succ, -1 = fail
-	return (int)(nz)
 }
 
-func ScalarBaseMult(out, scalar *[56]byte) int {
-	return ScalarMult(out, scalar, &basePoint)
+func ScalarBaseMult(out, scalar *[56]byte) {
+	ScalarMult(out, scalar, &basePoint)
 }

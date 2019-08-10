@@ -1,7 +1,7 @@
 // The MIT License (MIT)
 //
 // Copyright (c) 2014-2015 Cryptography Research, Inc.
-// Copyright (c) 2015 Yawning Angel.
+// Copyright (c) 2015-2019 Yawning Angel
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -23,11 +23,6 @@
 
 package x448
 
-// This should really use 64 bit limbs, but Go is fucking retarded and doesn't
-// have __(u)int128_t, so the 32 bit code it is, at a hefty performance
-// penalty.  Fuck my life, I'm going to have to bust out PeachPy to get this
-// to go fast aren't I.
-
 const (
 	wBits     = 32
 	lBits     = (wBits * 7 / 8)
@@ -36,7 +31,6 @@ const (
 )
 
 type limbUint uint32
-type limbSint int32
 
 type gf struct {
 	limb [x448Limbs]uint32
@@ -77,9 +71,8 @@ func (c *gf) mul(a, b *gf) {
 
 	// So fucking stupid that this is actually a fairly massive gain.
 	var accum0, accum1, accum2, accum3, accum4, accum5, accum6, accum7, accum8, accum9, accum10, accum11, accum12, accum13, accum14, accum15 uint64
-	var bv uint64
 
-	bv = (uint64)(b.limb[0])
+	bv := (uint64)(b.limb[0])
 	accum0 += bv * (uint64)(aa.limb[0])
 	accum1 += bv * (uint64)(aa.limb[1])
 	accum2 += bv * (uint64)(aa.limb[2])
@@ -650,9 +643,7 @@ func (x *gf) condSwap(y *gf, swap limbUint) {
 	//	y.limb[i] ^= s
 	// }
 
-	var s uint32
-
-	s = (x.limb[0] ^ y.limb[0]) & (uint32)(swap)
+	var s uint32 = (x.limb[0] ^ y.limb[0]) & (uint32)(swap)
 	x.limb[0] ^= s
 	y.limb[0] ^= s
 	s = (x.limb[1] ^ y.limb[1]) & (uint32)(swap)
@@ -712,9 +703,9 @@ func (a *gf) mlw(b *gf, w int) {
 	} else {
 		// This branch is *NEVER* taken with the current code.
 		panic("mul called with negative w")
-		ww := gf{[x448Limbs]uint32{(uint32)(-w)}}
-		a.mul(b, &ww)
-		a.sub(&zero, a)
+		// ww := gf{[x448Limbs]uint32{(uint32)(-w)}}
+		// a.mul(b, &ww)
+		// a.sub(&zero, a)
 	}
 }
 

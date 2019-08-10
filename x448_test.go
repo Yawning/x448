@@ -1,8 +1,7 @@
 // The MIT License (MIT)
 //
-// Copyright (c) 2011 Stanford University.
 // Copyright (c) 2014-2015 Cryptography Research, Inc.
-// Copyright (c) 2015 Yawning Angel.
+// Copyright (c) 2015-2019 Yawning Angel
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -106,10 +105,7 @@ func TestX448(t *testing.T) {
 
 	var out [x448Bytes]byte
 	for i, vec := range vectors {
-		ret := ScalarMult(&out, &vec.scalar, &vec.base)
-		if ret != 0 {
-			t.Errorf("KAT[%d]: ScalarMultiply failed", i)
-		}
+		ScalarMult(&out, &vec.scalar, &vec.base)
 		if !bytes.Equal(out[:], vec.answer[:]) {
 			t.Errorf("KAT[%d]: Mismatch", i)
 		}
@@ -126,16 +122,13 @@ func TestX448IETFDraft(t *testing.T) {
 	// refuse to run the full 1 million iterations, and the `go test`
 	// timeout will need to be increased (`go test -timeout 30m`).
 
-	var k, u, out [x448Bytes] byte
+	var k, u, out [x448Bytes]byte
 	copy(k[:], basePoint[:])
 	copy(u[:], basePoint[:])
 
 	for i := 0; i < 1000000; i++ {
-		ret := ScalarMult(&out, &k, &u)
-		if ret != 0 {
-			t.Fatalf("Iterated[%d]: ScalarMultiply failed", i)
-		}
-		switch (i+1) {
+		ScalarMult(&out, &k, &u)
+		switch i + 1 {
 		case 1:
 			known, _ := hex.DecodeString("3f482c8a9f19b01e6c46ee9711d9dc14fd4bf67af30765c2ae2b846a4d23a8cd0db897086239492caf350b51f833868b9bc2b3bca9cf4113")
 			if !bytes.Equal(out[:], known) {
@@ -211,31 +204,19 @@ func TestCurve448(t *testing.T) {
 	}
 
 	var out [x448Bytes]byte
-	ret := ScalarBaseMult(&out, &alicePriv)
-	if ret != 0 {
-		t.Error("Alice: ScalarBaseMult failed")
-	}
+	ScalarBaseMult(&out, &alicePriv)
 	if !bytes.Equal(out[:], alicePub[:]) {
 		t.Error("Alice: ScalarBaseMult Mismatch")
 	}
-	ret = ScalarBaseMult(&out, &bobPriv)
-	if ret != 0 {
-		t.Error("Bob: ScalarBaseMult failed")
-	}
+	ScalarBaseMult(&out, &bobPriv)
 	if !bytes.Equal(out[:], bobPub[:]) {
 		t.Error("Bob: ScalarBaseMult Mismatch")
 	}
-	ret = ScalarMult(&out, &bobPriv, &alicePub)
-	if ret != 0 {
-		t.Error("Bob: ScalarMult failed")
-	}
+	ScalarMult(&out, &bobPriv, &alicePub)
 	if !bytes.Equal(out[:], aliceBob[:]) {
 		t.Error("Bob: ScalarMult Mismatch")
 	}
-	ret = ScalarMult(&out, &alicePriv, &bobPub)
-	if ret != 0 {
-		t.Error("Alice: ScalarMult failed")
-	}
+	ScalarMult(&out, &alicePriv, &bobPub)
 	if !bytes.Equal(out[:], aliceBob[:]) {
 		t.Error("Alice: ScalarMult Mismatch")
 	}
@@ -243,19 +224,18 @@ func TestCurve448(t *testing.T) {
 
 func BenchmarkECDH(b *testing.B) {
 	var sa, sb, pa, pb, ab, ba [x448Bytes]byte
-	ret := 0
 
-	rand.Read(sa[:])
-	rand.Read(sb[:])
+	_, _ = rand.Read(sa[:])
+	_, _ = rand.Read(sb[:])
 	b.ResetTimer()
 	b.StopTimer()
 	for i := 0; i < b.N; i++ {
-		ret |= ScalarBaseMult(&pa, &sa)
-		ret |= ScalarBaseMult(&pb, &sb)
+		ScalarBaseMult(&pa, &sa)
+		ScalarBaseMult(&pb, &sb)
 		b.StartTimer()
-		ret |= ScalarMult(&ab, &sa, &pb)
+		ScalarMult(&ab, &sa, &pb)
 		b.StopTimer()
-		ret |= ScalarMult(&ba, &sb, &pa)
+		ScalarMult(&ba, &sb, &pa)
 		if !bytes.Equal(ab[:], ba[:]) {
 			b.Fatal("Alice/Bob: Mismatch")
 		}
