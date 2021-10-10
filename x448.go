@@ -27,7 +27,10 @@
 // See https://www.rfc-editor.org/rfc/rfc7748.txt
 package x448
 
-import "gitlab.com/yawning/x448.git/internal/field"
+import (
+	"gitlab.com/yawning/x448.git/internal/field"
+	_ "gitlab.com/yawning/x448.git/internal/toolchain"
+)
 
 const (
 	x448Bytes = 56
