@@ -27,27 +27,35 @@
 // See https://www.rfc-editor.org/rfc/rfc7748.txt
 package x448
 
+import (
+	"gitlab.com/yawning/x448.git/internal/field"
+	_ "gitlab.com/yawning/x448.git/internal/toolchain"
+)
+
 const (
 	x448Bytes = 56
 	edwardsD  = -39081
 )
 
-var basePoint = [56]byte{
-	5, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-}
+var (
+	basePoint = [x448Bytes]byte{5}
+
+	feZero field.TightFieldElement
+	feOne  = field.TightFieldElement{1}
+)
 
 func ScalarMult(out, scalar, base *[56]byte) {
-	var x1, x2, z2, x3, z3, t1, t2 gf
-	x1.deser(base)
-	x2.cpy(&one)
-	z2.cpy(&zero)
-	x3.cpy(&x1)
-	z3.cpy(&one)
+	var (
+		x1, x2, z2, x3, z3 field.TightFieldElement
+		t1, t2             field.LooseFieldElement
+	)
+	field.FromBytes(&x1, base)
+	field.Set(&x2, &feOne)
+	// z2 = 0
+	field.Set(&x3, &x1)
+	field.Set(&z3, &feOne)
 
-	var swap limbUint
+	var swap field.LimbUint
 
 	for t := int(448 - 1); t >= 0; t-- {
 		sb := scalar[t/8]
@@ -59,42 +67,51 @@ func ScalarMult(out, scalar, base *[56]byte) {
 			sb |= 0x80
 		}
 
-		kT := (limbUint)((sb >> ((uint)(t) % 8)) & 1)
+		kT := (field.LimbUint)((sb >> ((uint)(t) % 8)) & 1)
 		kT = -kT // Set to all 0s or all 1s
 
 		swap ^= kT
-		x2.condSwap(&x3, swap)
-		z2.condSwap(&z3, swap)
+		field.CondSwap(&x2, &x3, swap)
+		field.CondSwap(&z2, &z3, swap)
 		swap = kT
 
-		t1.add(&x2, &z2) // A = x2 + z2
-		t2.sub(&x2, &z2) // B = x2 - z2
-		z2.sub(&x3, &z3) // D = x3 - z3
-		x2.mul(&t1, &z2) // DA
-		z2.add(&z3, &x3) // C = x3 + z3
-		x3.mul(&t2, &z2) // CB
-		z3.sub(&x2, &x3) // DA-CB
-		z2.sqr(&z3)      // (DA-CB)^2
-		z3.mul(&x1, &z2) // z3 = x1(DA-CB)^2
-		z2.add(&x2, &x3) // (DA+CB)
-		x3.sqr(&z2)      // x3 = (DA+CB)^2
+		// Note: This deliberately omits reductions after add/sub operations
+		// if the result is only ever used as tne input to a mul/sqr since
+		// the implementations of those can deal with non-reduced inputs,
+		// or in the case of the 32-bit implementation, add/sub will never
+		// return non-reduced outputs.
+		//
+		// field.UnsafeTightenCast is only used to store a fully reduced
+		// output in a LooseFieldElement, or to provide such a
+		// LooseFieldElement as an TightFieldElement argument.
+		field.Add(&t1, &x2, &z2)                                        // A = x2 + z2
+		field.Sub(&t2, &x2, &z2)                                        // B = x2 - z2
+		field.Sub(field.RelaxCast(&z2), &x3, &z3)                       // D = x3 - z3 (z2 unreduced)
+		field.CarryMul(&x2, &t1, field.RelaxCast(&z2))                  // DA
+		field.Add(field.RelaxCast(&z2), &x3, &z3)                       // C = x3 + z3 (z2 unreduced)
+		field.CarryMul(&x3, &t2, field.RelaxCast(&z2))                  // CB
+		field.Sub(field.RelaxCast(&z3), &x2, &x3)                       // DA-CB (z3 unreduced)
+		field.CarrySquare(&z2, field.RelaxCast(&z3))                    // (DA-CB)^2 (z2 reduced)
+		field.CarryMul(&z3, field.RelaxCast(&x1), field.RelaxCast(&z2)) // z3 = x1(DA-CB)^2 (z3 reduced)
+		field.Add(field.RelaxCast(&z2), &x2, &x3)                       // (DA+CB) (z2 unreduced)
+		field.CarrySquare(&x3, field.RelaxCast(&z2))                    // x3 = (DA+CB)^2
 
-		z2.sqr(&t1)      // AA = A^2
-		t1.sqr(&t2)      // BB = B^2
-		x2.mul(&z2, &t1) // x2 = AA*BB
-		t2.sub(&z2, &t1) // E = AA-BB
+		field.CarrySquare(&z2, &t1)                          // AA = A^2 (z2 reduced)
+		field.CarrySquare(field.UnsafeTightenCast(&t1), &t2) // BB = B^2 (t1 reduced)
+		field.CarryMul(&x2, field.RelaxCast(&z2), &t1)       // x2 = AA*BB
+		field.Sub(&t2, &z2, field.UnsafeTightenCast(&t1))    // E = AA-BB (safe, t1 is reduced)
 
-		t1.mlw(&t2, -edwardsD) // E*-d = a24*E
-		t1.add(&t1, &z2)       // AA + a24*E
-		z2.mul(&t2, &t1)       // z2 = E(AA+a24*E)
+		field.CarryMulSmol(field.UnsafeTightenCast(&t1), &t2, -edwardsD) // E*-d = a24*E (t1 reduced)
+		field.Add(&t1, field.UnsafeTightenCast(&t1), &z2)                // AA + a24*E (safe, t1 is reduced)
+		field.CarryMul(&z2, &t2, &t1)                                    // z2 = E(AA+a24*E)
 	}
 
 	// Finish
-	x2.condSwap(&x3, swap)
-	z2.condSwap(&x3, swap)
-	z2.inv(&z2)
-	x1.mul(&x2, &z2)
-	x1.ser(out)
+	field.CondSwap(&x2, &x3, swap)
+	field.CondSwap(&z2, &x3, swap)
+	field.CarryInv(&z2, field.RelaxCast(&z2))
+	field.CarryMul(&x1, field.RelaxCast(&x2), field.RelaxCast(&z2))
+	field.ToBytes(out, &x1)
 }
 
 func ScalarBaseMult(out, scalar *[56]byte) {
