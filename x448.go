@@ -76,14 +76,14 @@ func ScalarMult(out, scalar, base *[56]byte) {
 		swap = kT
 
 		// Note: This deliberately omits reductions after add/sub operations
-		// if the result is only ever used as tne input to a mul/sqr since
+		// if the result is only ever used as the input to a mul/sqr since
 		// the implementations of those can deal with non-reduced inputs,
 		// or in the case of the 32-bit implementation, add/sub will never
 		// return non-reduced outputs.
 		//
 		// field.UnsafeTightenCast is only used to store a fully reduced
 		// output in a LooseFieldElement, or to provide such a
-		// LooseFieldElement as an TightFieldElement argument.
+		// LooseFieldElement as a TightFieldElement argument.
 		field.Add(&t1, &x2, &z2)                                        // A = x2 + z2
 		field.Sub(&t2, &x2, &z2)                                        // B = x2 - z2
 		field.Sub(field.RelaxCast(&z2), &x3, &z3)                       // D = x3 - z3 (z2 unreduced)
