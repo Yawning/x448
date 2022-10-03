@@ -11,6 +11,12 @@ On 64-bit targets the underlying field arithmetic uses output taken from
 the fiat-crypto project.  The 32-bit version and the actual ECDH implementation
 are based off Michael Hamburg's portable x448 implementation.
 
+**WARNING**: As a concession to the target's growing popularity, the
+`wasm` target is supported using the 32-bit backend, however the
+WebAssembly specification does not mandate that any opcodes are
+constant time, making it difficult to provide assurances related to
+timing side-channels.
+
 Notes:
 
  * The build-tag system used to determine which version to build is sub-optimal

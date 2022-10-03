@@ -23,24 +23,18 @@
 // Package toolchain enforces the minimum supported toolchain.
 package toolchain
 
-var (
-	// This is enforced so that I can consolidate build constraints
-	// instead of keeping track of exactly when each 64-bit target got
-	// support for SSA doing the right thing for bits.Add64/bits.Mul64.
-	//
-	// If you absolutely must get this working on older Go versions,
-	// the 64-bit codepath is safe (and performant) as follows:
-	//
-	//  * 1.12 - amd64 (all other targets INSECURE due to vartime fallback)
-	//  * 1.13 - arm64, ppcle, ppc64
-	//  * 1.14 - s390x
-	//
-	// Last updated: Go 1.17 (src/cmd/compile/internal/ssagen/ssa.go)
-	_ = __SOFTWARE_REQUIRES_GO_VERSION_1_16__
-
-	// WASM does not specify the timing characteristics for any operations.
-	//
-	// This package is written under the assumption that certain things
-	// are constant time.
-	_ = __SOFTWARE_REQUIRES_GOARCH_NOT_WASM__
-)
+// This is enforced so that I can consolidate build constraints
+// instead of keeping track of exactly when each 64-bit target got
+// support for SSA doing the right thing for bits.Add64/bits.Mul64.
+//
+// If you absolutely must get this working on older Go versions,
+// the 64-bit codepath is safe (and performant) as follows:
+//
+//  * 1.12 - amd64 (all other targets INSECURE due to vartime fallback)
+//  * 1.13 - arm64, ppcle, ppc64
+//  * 1.14 - s390x
+//
+//  * riscv64 became fast during 1.19, not shipped yet
+//
+// Last updated: Go 1.19 (src/cmd/compile/internal/ssagen/ssa.go)
+var _ = __SOFTWARE_REQUIRES_GO_VERSION_1_18__

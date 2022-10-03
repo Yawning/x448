@@ -20,9 +20,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-//go:build go1.16
-// +build go1.16
+//go:build go1.18
+// +build go1.18
 
 package toolchain
 
-const __SOFTWARE_REQUIRES_GO_VERSION_1_16__ = uint8(0)
+const __SOFTWARE_REQUIRES_GO_VERSION_1_18__ = uint8(0)

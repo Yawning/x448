@@ -21,9 +21,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-//go:build (386 || arm || mips || mipsle || mips64le || mips64 || force32bit) && !force64bit
-// +build 386 arm mips mipsle mips64le mips64 force32bit
-// +build !force64bit
+//go:build (386 || arm || mips || mipsle || wasm || mips64le || mips64 || riscv64 || loong64 || force32bit) && !force64bit
 
 package field
 
