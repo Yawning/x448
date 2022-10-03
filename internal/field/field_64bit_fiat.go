@@ -27,8 +27,6 @@
 //   balance = [0x1fffffffffffffe, 0x1fffffffffffffe, 0x1fffffffffffffe, 0x1fffffffffffffe, 0x1fffffffffffffc, 0x1fffffffffffffe, 0x1fffffffffffffe, 0x1fffffffffffffe]
 
 //go:build (amd64 || arm64 || ppc64le || ppc64 || x390x || force64bit) && !force32bit
-// +build amd64 arm64 ppc64le ppc64 x390x force64bit
-// +build !force32bit
 
 package field
 
