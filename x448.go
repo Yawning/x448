@@ -40,7 +40,6 @@ const (
 var (
 	basePoint = [x448Bytes]byte{5}
 
-	feZero field.TightFieldElement
 	feOne  = field.TightFieldElement{1}
 )
 
